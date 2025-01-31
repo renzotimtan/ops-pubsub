@@ -6,6 +6,8 @@ import com.renzotimtan.ops_system.repository.OrderRepository;
 import com.renzotimtan.ops_system.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.google.cloud.spring.pubsub.core.PubSubTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +19,10 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final PubSubTemplate pubSubTemplate;
+
+    @Value("${app.pubsub.topic:order}")
+    private String orderTopic;
 
     public Order createOrder(String userId, Map<String, Integer> productQuantities) {
 
@@ -43,6 +49,7 @@ public class OrderService {
         order.setTotalAmount(total);
         order.setOrderTime(LocalDateTime.now());
 
+        pubSubTemplate.publish(orderTopic, order.toString());
         return orderRepository.save(order);
     }
 
