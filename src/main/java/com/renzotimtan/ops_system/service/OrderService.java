@@ -2,14 +2,20 @@ package com.renzotimtan.ops_system.service;
 
 import com.renzotimtan.ops_system.model.Order;
 import com.renzotimtan.ops_system.model.Product;
+import com.renzotimtan.ops_system.model.User;
 import com.renzotimtan.ops_system.repository.OrderRepository;
 import com.renzotimtan.ops_system.repository.ProductRepository;
+import com.renzotimtan.ops_system.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.spring.pubsub.core.PubSubTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +25,9 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
     private final PubSubTemplate pubSubTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.pubsub.topic:order}")
     private String orderTopic;
@@ -44,12 +52,22 @@ public class OrderService {
 
         // Create order
         Order order = new Order();
-        order.setUserId(userId);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        order.setUser(user);
         order.setProductQuantities(productQuantities);
         order.setTotalAmount(total);
-        order.setOrderTime(LocalDateTime.now());
+        order.setOrderTime(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
-        pubSubTemplate.publish(orderTopic, order.toString());
+         // Convert Order object to JSON and publish
+         try {
+            String json = objectMapper.writeValueAsString(order);
+            pubSubTemplate.publish(orderTopic, json);
+        } catch (Exception e) {
+            throw new RuntimeException("Error serializing order to JSON", e);
+        }
+
         return orderRepository.save(order);
     }
 

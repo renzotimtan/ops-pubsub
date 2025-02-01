@@ -1,25 +1,24 @@
 package com.renzotimtan.ops_system.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Document(collection = "orders")
 public class Order {
 
     @Id
+    @Schema(hidden = true)
     private String id;
-    private String userId;
+
+    @DBRef
+    private User user;
+
     private Map<String, Integer> productQuantities;
     private double totalAmount;
-    private LocalDateTime orderTime;
-    
+    private String orderTime;
 }
