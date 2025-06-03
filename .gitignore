@@ -34,3 +34,7 @@ build/
 
 ### GCP ###
 src/main/resources/gcp-credentials.json
+
+### ENV ###
+application.properties
+application.yml
